@@ -45,6 +45,7 @@ Depending on the number of groups and type of analysis this can become repetitiv
 group_by() is often used together with summarize(), which collapses each group into a single-row summary of that group. group_by() takes as arguments the column names that contain the categorical variables for which you want to calculate the summary statistics. Summarize contains the functions and arguments to complete the calculation. So to compute the mean butyrate concentration by semester:
 
 ```{r}
+scfa_data <- scfa_indv_qc
 scfa_data %>%
   group_by(semester) %>%
   summarize(mean_butyrate = mean(butyrate_mmol_kg, na.rm = TRUE))
@@ -108,6 +109,12 @@ Apply the group and summarise functions to determine the mean concentration of a
 
 ```{r}
 # write code here
+scfa_data %>%
+  filter(!is.na(butyrate_mmol_kg)) %>%
+  filter(!is.na(acetate_mmol_kg)) %>%
+  filter(!is.na(propionate_mmol_kg)) %>%
+  group_by(study_week) %>%
+  summarize(mean_butyrate = mean(acetate_mmol_kg),mean(acetate_mmol_kg), mean(propionate_mmol_kg))
 
 ```
 
@@ -133,6 +140,7 @@ spread() takes three principal arguments:
 Optional arguments include ‘fill’ which, if included, fills in missing values with the value provided. Use spread() to widen the data frame by study week. Inspect the result, can you determine what happened here? 
 
 ```{r}
+scfa_wkly <- scfa_wkly_qc
 scfa_wkly %>%
   spread(key = study_week, value = mean_butyrate)
 ```
@@ -141,9 +149,9 @@ View the output, notice there are a lot of NAs and extra weeks (week 4 & 5). To 
 
 ```{r}
 scfa_wkly %>%
-  select(participant_id, semester, supplement_consumed, study_week, mean_butyrate) %>% #keep only columns of interest
+  select(participant_id, semester, supplement_consumed, study_week, butyrate_mean) %>% #keep only columns of interest
   filter(study_week == "week1" | study_week == "week3") %>% #keep only weeks of interest
-  spread(study_week, mean_butyrate) #widen data frame
+  spread(study_week, butyrate_mean) #widen data frame
 ```
 
 Notice there are some rows containing NAs, we cannot calculate a difference if the data for one of the weeks are missing, remove those using na.omit() on these columns. 
@@ -152,9 +160,9 @@ This yields a data frame where the observations for each week are spread across 
 
 ```{r}
 butyrate_wide <- scfa_wkly %>%
-  select(participant_id, semester, supplement_consumed, study_week, mean_butyrate) %>% #drop extra columns
+  select(participant_id, semester, supplement_consumed, study_week, butyrate_mean) %>% #drop extra columns
   filter(study_week == "week1" | study_week == "week3") %>% #drop extra weeks
-  spread(study_week, mean_butyrate) %>% #convert to wide format
+  spread(study_week, butyrate_mean) %>% #convert to wide format
   na.omit(week1, week3) %>% #drop NAs from select columns
   mutate(delta_butyrate = week3 - week1) #calculate difference 
 
@@ -165,7 +173,14 @@ head(butyrate_wide)
 Create a wide data frame for the other SCFAs.
 ```{r}
 # copy+paste and edit code chunk for acetate
+acetate_wide <- scfa_wkly %>%
+  select(participant_id, semester, supplement_consumed, study_week, acetate_mean) %>% #drop extra columns
+  filter(study_week == "week1" | study_week == "week3") %>% #drop extra weeks
+  spread(study_week, acetate_mean) %>% #convert to wide format
+  na.omit(week1, week3) %>% #drop NAs from select columns
+  mutate(delta_acetate = week3 - week1) #calculate difference 
 
+head(acetate_wide)
 ```
 
 ```{r}
